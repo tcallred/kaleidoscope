@@ -14,18 +14,18 @@ typedef enum {
 typedef struct ExprAST {
     ExprType type;
     union {
-        const char* error_value;
-        double number_value; // for NumberType
-        char* variable_name; // for VariableType
+        const char* errorValue;
+        double numberValue; // for NumberType
+        const char* variableName; // for VariableType
         struct { // for BinopType
             char op;
             struct ExprAST* lhs;
             struct ExprAST* rhs;
         } binop;
         struct { // for CallType
-            char* callee;
+            const char* callee;
             struct ExprAST** args;
-            size_t args_count;
+            size_t argsCount;
         } call;
     } value;
 } ExprAST;
@@ -34,7 +34,7 @@ typedef struct ExprAST {
 typedef struct {
     char* name;
     ExprAST** args;
-    size_t args_count;
+    size_t argsCount;
 } PrototypeAST;
 
 // Define FunctionAST in C

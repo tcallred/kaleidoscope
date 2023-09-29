@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include "arena.h"
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,28 @@ const char* token_to_string(Arena* arena, Token token)
     }
 }
 
+bool token_equals(Token token1, Token token2)
+{
+    if (token1.kind != token2.kind) {
+        return false;
+    }
+
+    switch (token1.kind) {
+    case Eof:
+    case Def:
+    case Extern:
+        return true;
+    case Identifier:
+        return strcmp(token1.value.identifier, token2.value.identifier) == 0;
+    case Number:
+        return token1.value.number == token2.value.number;
+    case Other:
+        return token1.value.other == token2.value.other;
+    default:
+        return false;
+    }
+}
+
 static int skip_whitespace(const char* input, int idx)
 {
     while (input[idx] && isspace(input[idx])) {
@@ -48,7 +71,7 @@ static int skip_comment(const char* input, int idx)
     return idx;
 }
 
-static int lex_keyword_or_id(const char* input, int idx, Token tokens[], const int token_count)
+static int lex_keyword_or_id(Arena* arena, const char* input, int idx, Token tokens[], const int tokenCount)
 {
 
     const int start = idx;
@@ -56,34 +79,34 @@ static int lex_keyword_or_id(const char* input, int idx, Token tokens[], const i
         idx++;
     }
     const int length = idx - start;
-    char* identifier_str = malloc(length + 1);
-    strncpy(identifier_str, input + start, length);
-    identifier_str[length] = '\0';
-    if (strcmp(identifier_str, "def") == 0) {
-        tokens[token_count].kind = Def;
-    } else if (strcmp(identifier_str, "extern") == 0) {
-        tokens[token_count].kind = Extern;
+    char* identifierStr = arena_alloc(arena, length + 1);
+    strncpy(identifierStr, input + start, length);
+    identifierStr[length] = '\0';
+    if (strcmp(identifierStr, "def") == 0) {
+        tokens[tokenCount].kind = Def;
+    } else if (strcmp(identifierStr, "extern") == 0) {
+        tokens[tokenCount].kind = Extern;
     } else {
-        tokens[token_count].kind = Identifier;
-        tokens[token_count].value.identifier = identifier_str;
+        tokens[tokenCount].kind = Identifier;
+        tokens[tokenCount].value.identifier = identifierStr;
     }
 
     return idx;
 }
 
-static int lex_number(const char* input, int idx, Token tokens[], const int token_count)
+static int lex_number(const char* input, int idx, Token tokens[], const int tokenCount)
 {
     const int start = idx;
     while (isdigit(input[idx]) || input[idx] == '.') {
         idx++;
     }
     const int length = idx - start;
-    char* num_str = malloc(length + 1);
-    strncpy(num_str, input + start, length);
-    num_str[length] = '\0';
-    tokens[token_count].kind = Number;
-    tokens[token_count].value.number = atof(num_str);
-    free(num_str);
+    char* numStr = malloc(length + 1);
+    strncpy(numStr, input + start, length);
+    numStr[length] = '\0';
+    tokens[tokenCount].kind = Number;
+    tokens[tokenCount].value.number = atof(numStr);
+    free(numStr);
 
     return idx;
 }
@@ -92,7 +115,7 @@ Token* lex(Arena* arena, const char* input)
 {
     int idx = 0;
     Token* tokens = arena_alloc(arena, sizeof(Token) * strlen(input));
-    int token_count = 0;
+    int tokenCount = 0;
 
     while (input[idx]) {
         idx = skip_whitespace(input, idx);
@@ -100,21 +123,21 @@ Token* lex(Arena* arena, const char* input)
             break;
         }
         if (isalpha(input[idx])) {
-            idx = lex_keyword_or_id(input, idx, tokens, token_count);
-            token_count++;
+            idx = lex_keyword_or_id(arena, input, idx, tokens, tokenCount);
+            tokenCount++;
         } else if (isdigit(input[idx]) || input[idx] == '.') {
-            idx = lex_number(input, idx, tokens, token_count);
-            token_count++;
+            idx = lex_number(input, idx, tokens, tokenCount);
+            tokenCount++;
         } else if (input[idx] == '#') {
             idx = skip_comment(input, idx);
         } else {
-            tokens[token_count].kind = Other;
-            tokens[token_count].value.other = input[idx];
-            token_count++;
+            tokens[tokenCount].kind = Other;
+            tokens[tokenCount].value.other = input[idx];
+            tokenCount++;
             idx++;
         }
     }
 
-    tokens[token_count].kind = Eof;
+    tokens[tokenCount].kind = Eof;
     return tokens;
 }

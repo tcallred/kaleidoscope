@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const char* read_contents_to_string(Arena* arena, const char* filename)
+static const char* read_contents_to_string(Arena* arena, const char* filename)
 {
     // Open the file for reading
     FILE* file = fopen(filename, "r");
@@ -17,10 +17,10 @@ const char* read_contents_to_string(Arena* arena, const char* filename)
 
     // Determine the file size
     fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
+    long fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);
     // Allocate memory for the code buffer
-    char* code = arena_alloc(arena, file_size + 1);
+    char* code = arena_alloc(arena, fileSize + 1);
 
     // Check if memory allocation was successful
     if (code == NULL) {
@@ -28,8 +28,8 @@ const char* read_contents_to_string(Arena* arena, const char* filename)
         return NULL;
     }
     // Read the code from the file
-    fread(code, 1, file_size, file);
-    code[file_size] = '\0';
+    fread(code, 1, fileSize, file);
+    code[fileSize] = '\0';
 
     // Close the file
     fclose(file);
@@ -43,22 +43,22 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    Arena code_arena = { 0 };
-    const char* code = read_contents_to_string(&code_arena, argv[1]);
+    Arena codeArena = { 0 };
+    const char* code = read_contents_to_string(&codeArena, argv[1]);
     if (!code) {
         fprintf(stderr, "There was a problem reading the file");
         return 1;
     }
 
-    Arena lex_arena = { 0 };
-    Token* tokens = lex(&lex_arena, code);
+    Arena lexArena = { 0 };
+    Token* tokens = lex(&lexArena, code);
 
     for (int i = 0; tokens[i].kind != Eof; i++) {
-        printf("%s ", token_to_string(&lex_arena, tokens[i]));
+        printf("%s ", token_to_string(&lexArena, tokens[i]));
     }
     printf("\n");
 
-    arena_free(&code_arena);
-    arena_free(&lex_arena);
+    arena_free(&codeArena);
+    arena_free(&lexArena);
     return 0;
 }
