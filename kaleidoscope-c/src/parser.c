@@ -20,29 +20,13 @@ static void progress(int* idx)
     (*idx)++;
 }
 
-static int expect(const Token tokens[], int* idx, const Token token)
+static bool consume_tok(const Token tokens[], int* idx, const Token token)
 {
-    bool equal = false;
-    if (tokens[*idx].kind == token.kind) {
-        switch (tokens[*idx].kind) {
-        case Identifier:
-            equal = strcmp(tokens[*idx].value.identifier, token.value.identifier) == 0;
-            break;
-        case Number:
-            equal = tokens[*idx].value.number == token.value.number;
-            break;
-        case Other:
-            equal = tokens[*idx].value.other == token.value.other;
-            break;
-        default:
-            equal = true;
-        }
-    }
-    if (equal) {
+    if (token_equals(tokens[*idx], token)) {
         progress(idx);
-        return 0;
+        return true;
     } else {
-        return -1;
+        return false;
     }
 }
 
@@ -72,17 +56,17 @@ static ExprAST* parse_number(Arena* arena, const Token tokens[], int* idx)
 
 static ExprAST* parse_paren_expr(Arena* arena, const Token tokens[], int* idx)
 {
-    if (expect(tokens, idx, LEFT_PAREN) < 0) {
+    if (consume_tok(tokens, idx, LEFT_PAREN)) {
         return expr_parse_error(arena, "Expected left paren");
     }
     ExprAST* expr = parse_expression(arena, tokens, idx);
-    if (expect(tokens, idx, RIGHT_PAREN) < 0) {
+    if (consume_tok(tokens, idx, RIGHT_PAREN)) {
         return expr_parse_error(arena, "Expected right paren");
     }
     return expr;
 }
 
-static bool token_equals_other(Token t, char c)
+static bool token_char_equals(Token t, char c)
 {
     Token t1 = {
         .kind = Other,
@@ -94,8 +78,8 @@ static bool token_equals_other(Token t, char c)
 static size_t count_args(const Token tokens[], int idx)
 {
     size_t count = 0;
-    while (!token_equals_other(tokens[idx], ')')) {
-        if (token_equals_other(tokens[idx], ',')) {
+    while (!token_char_equals(tokens[idx], ')')) {
+        if (token_char_equals(tokens[idx], ',')) {
             count++;
         }
         idx++;
@@ -109,12 +93,12 @@ static ExprAST* parse_identifier_expr(Arena* arena, const Token tokens[], int* i
     if (!identifier) {
         return expr_parse_error(arena, "Expected identifier");
     }
-    if (token_equals_other(tokens[*idx], '(')) {
-        expect(tokens, idx, RIGHT_PAREN);
+    if (token_char_equals(tokens[*idx], '(')) {
+        consume_tok(tokens, idx, RIGHT_PAREN);
         const size_t argsCount = count_args(tokens, *idx);
         ExprAST** args = arena_alloc(arena, sizeof(ExprAST*) * argsCount);
         size_t argsIdx = 0;
-        if (!token_equals_other(tokens[*idx], ')')) {
+        if (!token_char_equals(tokens[*idx], ')')) {
             while (true) {
                 ExprAST* expr = parse_expression(arena, tokens, idx);
                 if (expr->type == ErrorType) {
@@ -122,14 +106,14 @@ static ExprAST* parse_identifier_expr(Arena* arena, const Token tokens[], int* i
                 } else {
                     args[argsIdx++] = expr;
                 }
-                if (token_equals_other(tokens[*idx], ')')) {
+                if (token_char_equals(tokens[*idx], ')')) {
                     break;
                 }
-                if (expect(tokens, idx, COMMA) < 0) {
+                if (consume_tok(tokens, idx, COMMA)) {
                     return expr_parse_error(arena, "Expected comma in argument list");
                 }
             }
-            expect(tokens, idx, LEFT_PAREN);
+            consume_tok(tokens, idx, LEFT_PAREN);
         }
         ExprAST* callExpr = arena_alloc(arena, sizeof(ExprAST));
         callExpr->type = CallType;
