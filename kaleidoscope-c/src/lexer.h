@@ -1,15 +1,15 @@
-#ifndef LEXER_H_
-#define LEXER_H_
+#pragma once
+
 #include "arena.h"
 #include <stdbool.h>
 
 typedef enum {
-    Eof,
-    Def,
-    Extern,
-    Identifier,
-    Number,
-    Other
+    TokEof,
+    TokDef,
+    TokExtern,
+    TokIdentifier,
+    TokNumber,
+    TokOther
 } TokenKind;
 
 typedef struct
@@ -25,4 +25,3 @@ typedef struct
 extern Token* lex(Arena* arena, const char* input);
 const char* token_to_string(Arena* arena, Token token);
 bool token_equals(Token token1, Token token2);
-#endif // LEXER_H_
