@@ -7,21 +7,18 @@ static const Token LEFT_PAREN = { .kind = TokOther, .value = { .other = ')' } };
 static const Token RIGHT_PAREN = { .kind = TokOther, .value = { .other = ')' } };
 static const Token COMMA = { .kind = TokOther, .value = { .other = ',' } };
 
-static ExprAST* expr_parse_error(Arena* a, const char* msg)
-{
+static ExprAST* expr_parse_error(Arena* a, const char* msg) {
     ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
     expr->type = ExprErrorType;
     expr->value.errorValue = msg;
     return expr;
 }
 
-static void progress(usize* idx)
-{
+static void progress(usize* idx) {
     (*idx)++;
 }
 
-static bool consume_tok(Token tokens[], usize* idx, const Token token)
-{
+static bool consume_tok(Token tokens[], usize* idx, const Token token) {
     if (token_equals(tokens[*idx], token)) {
         progress(idx);
         return true;
@@ -30,8 +27,7 @@ static bool consume_tok(Token tokens[], usize* idx, const Token token)
     }
 }
 
-static const char* expect_id(Token tokens[], usize* idx)
-{
+static const char* expect_id(Token tokens[], usize* idx) {
     if (tokens[*idx].kind == TokIdentifier) {
         progress(idx);
         return tokens[*idx].value.identifier;
@@ -41,8 +37,7 @@ static const char* expect_id(Token tokens[], usize* idx)
 
 static ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx);
 
-static ExprAST* parse_number(Arena* a, Token tokens[], usize* idx)
-{
+static ExprAST* parse_number(Arena* a, Token tokens[], usize* idx) {
     if (tokens[*idx].kind == TokNumber) {
         ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
         expr->type = ExprNumberType;
@@ -54,8 +49,7 @@ static ExprAST* parse_number(Arena* a, Token tokens[], usize* idx)
     }
 }
 
-static ExprAST* parse_paren_expr(Arena* a, Token tokens[], usize* idx)
-{
+static ExprAST* parse_paren_expr(Arena* a, Token tokens[], usize* idx) {
     if (!consume_tok(tokens, idx, LEFT_PAREN)) {
         return expr_parse_error(a, "Expected left paren");
     }
@@ -66,8 +60,7 @@ static ExprAST* parse_paren_expr(Arena* a, Token tokens[], usize* idx)
     return expr;
 }
 
-static bool token_char_equals(Token t, char c)
-{
+static bool token_char_equals(Token t, char c) {
     Token t1 = {
         .kind = TokOther,
         .value = { .other = c }
@@ -75,8 +68,7 @@ static bool token_char_equals(Token t, char c)
     return token_equals(t1, t);
 }
 
-static usize count_args(Token tokens[], usize idx)
-{
+static usize count_args(Token tokens[], usize idx) {
     usize count = 0;
     while (!token_char_equals(tokens[idx], ')')) {
         if (token_char_equals(tokens[idx], ',')) {
@@ -87,8 +79,7 @@ static usize count_args(Token tokens[], usize idx)
     return count;
 }
 
-static ExprAST* parse_identifier_expr(Arena* a, Token tokens[], usize* idx)
-{
+static ExprAST* parse_identifier_expr(Arena* a, Token tokens[], usize* idx) {
     const char* identifier = expect_id(tokens, idx);
     if (!identifier) {
         return expr_parse_error(a, "Expected identifier");
@@ -129,8 +120,7 @@ static ExprAST* parse_identifier_expr(Arena* a, Token tokens[], usize* idx)
     }
 }
 
-static ExprAST* parse_primary(Arena* a, Token tokens[], usize* idx)
-{
+static ExprAST* parse_primary(Arena* a, Token tokens[], usize* idx) {
     switch (tokens[*idx].kind) {
     case TokIdentifier:
         return parse_identifier_expr(a, tokens, idx);
@@ -146,8 +136,7 @@ static ExprAST* parse_primary(Arena* a, Token tokens[], usize* idx)
     }
 }
 
-static int binop_precedence(char op)
-{
+static int binop_precedence(char op) {
     switch (op) {
     case '<':
         return 10;
@@ -161,8 +150,7 @@ static int binop_precedence(char op)
     }
 }
 
-static int get_tok_precedence(Token t)
-{
+static int get_tok_precedence(Token t) {
     if (t.kind != TokOther) {
         return -1;
     }
@@ -170,8 +158,7 @@ static int get_tok_precedence(Token t)
     return binop_precedence(t.value.other);
 }
 
-static ExprAST* parse_binop_rhs(Arena* a, Token tokens[], usize* idx, int exprPrec, ExprAST* lhs)
-{
+static ExprAST* parse_binop_rhs(Arena* a, Token tokens[], usize* idx, int exprPrec, ExprAST* lhs) {
     while (true) {
         int tokPrec = get_tok_precedence(tokens[*idx]);
         if (tokPrec < exprPrec) {
@@ -202,11 +189,48 @@ static ExprAST* parse_binop_rhs(Arena* a, Token tokens[], usize* idx, int exprPr
     }
 }
 
-static ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx)
-{
+static ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx) {
     ExprAST* lhs = parse_primary(a, tokens, idx);
     if (lhs->type == ExprErrorType) {
         return lhs;
     }
     return parse_binop_rhs(a, tokens, idx, 0, lhs);
+}
+
+// ---- Prototypes ----
+
+static PrototypeAST* prototype_error(Arena* a, const char* msg) {
+    PrototypeAST* p = arena_alloc(a, sizeof(PrototypeAST));
+    p->errorValue = msg;
+    return p;
+}
+
+static usize count_arg_names(Token tokens[], usize idx) {
+    usize count = 0;
+    while (!token_char_equals(tokens[idx++], ')')) {
+        count++;
+    }
+    return count;
+}
+
+static PrototypeAST* parse_prototype(Arena* a, Token tokens[], usize* idx) {
+    const char* fnName = expect_id(tokens, idx);
+    if (!fnName) {
+        return prototype_error(a, "Expected function name");
+    }
+    if (!consume_tok(tokens, idx, LEFT_PAREN)) {
+        return prototype_error(a, "Expected open paren");
+    }
+    const usize argNameCnt = count_arg_names(tokens, *idx);
+    const char** argNames = arena_alloc(a, sizeof(char*) * argNameCnt);
+    usize i = 0;
+    while (!token_char_equals(tokens[*idx], ')') && tokens[*idx].kind == TokIdentifier) {
+        argNames[i++] = expect_id(tokens, idx);
+    }
+    consume_tok(tokens, idx, RIGHT_PAREN);
+    PrototypeAST* proto = arena_alloc(a, sizeof(PrototypeAST));
+    proto->name = fnName;
+    proto->argsCount = argNameCnt;
+    proto->args = argNames;
+    return proto;
 }

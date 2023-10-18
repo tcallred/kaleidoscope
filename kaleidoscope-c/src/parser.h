@@ -31,9 +31,10 @@ typedef struct ExprAST {
 } ExprAST;
 
 typedef struct {
-    char* name;
-    ExprAST** args;
+    const char* name;
+    const char** args;
     usize argsCount;
+    const char* errorValue;
 } PrototypeAST;
 
 typedef struct {

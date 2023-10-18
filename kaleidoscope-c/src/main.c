@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const char* read_contents_to_string(Arena* arena, const char* filename)
-{
+static const char* read_contents_to_string(Arena* arena, const char* filename) {
     // Open the file for reading
     FILE* file = fopen(filename, "r");
 
@@ -36,8 +35,7 @@ static const char* read_contents_to_string(Arena* arena, const char* filename)
     return code;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "Filename required");
         return 1;
@@ -53,7 +51,7 @@ int main(int argc, char** argv)
     Arena lexArena = { 0 };
     Token* tokens = lex(&lexArena, code);
 
-    for (int i = 0; tokens[i].kind != Eof; i++) {
+    for (int i = 0; tokens[i].kind != TokEof; i++) {
         printf("%s ", token_to_string(&lexArena, tokens[i]));
     }
     printf("\n");

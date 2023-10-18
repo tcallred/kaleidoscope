@@ -1,13 +1,13 @@
 #include "lexer.h"
 #include "arena.h"
+#include "types.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-const char* token_to_string(Arena* arena, Token token)
-{
+const char* token_to_string(Arena* arena, Token token) {
     switch (token.kind) {
     case TokEof:
         return "Eof";
@@ -33,8 +33,7 @@ const char* token_to_string(Arena* arena, Token token)
     }
 }
 
-bool token_equals(Token token1, Token token2)
-{
+bool token_equals(Token token1, Token token2) {
     if (token1.kind != token2.kind) {
         return false;
     }
@@ -55,24 +54,21 @@ bool token_equals(Token token1, Token token2)
     }
 }
 
-static int skip_whitespace(const char* input, size_t idx)
-{
+static int skip_whitespace(const char* input, usize idx) {
     while (input[idx] && isspace(input[idx])) {
         idx++;
     }
     return idx;
 }
 
-static int skip_comment(const char* input, size_t idx)
-{
+static int skip_comment(const char* input, usize idx) {
     while (input[idx] && input[idx] != '\n' && input[idx] != '\r') {
         idx++;
     }
     return idx;
 }
 
-static int lex_keyword_or_id(Arena* arena, const char* input, size_t idx, Token tokens[], int tokenCount)
-{
+static int lex_keyword_or_id(Arena* arena, const char* input, usize idx, Token tokens[], int tokenCount) {
 
     const int start = idx;
     while (isalnum(input[idx])) {
@@ -94,8 +90,7 @@ static int lex_keyword_or_id(Arena* arena, const char* input, size_t idx, Token 
     return idx;
 }
 
-static int lex_number(const char* input, size_t idx, Token tokens[], int tokenCount)
-{
+static int lex_number(const char* input, usize idx, Token tokens[], int tokenCount) {
     const int start = idx;
     while (isdigit(input[idx]) || input[idx] == '.') {
         idx++;
@@ -111,9 +106,8 @@ static int lex_number(const char* input, size_t idx, Token tokens[], int tokenCo
     return idx;
 }
 
-Token* lex(Arena* arena, const char* input)
-{
-    size_t idx = 0;
+Token* lex(Arena* arena, const char* input) {
+    usize idx = 0;
     Token* tokens = arena_alloc(arena, sizeof(Token) * strlen(input));
     int tokenCount = 0;
 

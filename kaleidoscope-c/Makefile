@@ -7,7 +7,7 @@ SRCEXT := c
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
-CFLAGS := -Wall -Wextra -g -O3
+CFLAGS := -Wall -Wextra -g
 
 $(TARGET): $(OBJECTS)
 	@mkdir -p $(BUILDDIR)
