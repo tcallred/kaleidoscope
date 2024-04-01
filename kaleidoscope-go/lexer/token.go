@@ -6,30 +6,25 @@ type Token interface {
 
 type TokEof struct{}
 
-func (t *TokEof) token() {}
-
 type TokDef struct{}
 
-func (t *TokDef) token() {}
-
 type TokExtern struct{}
-
-func (t *TokExtern) token() {}
 
 type TokIdentifier struct {
 	Value string
 }
 
-func (t *TokIdentifier) token() {}
-
 type TokNumber struct {
 	Value float64
 }
-
-func (t *TokNumber) token() {}
 
 type TokOther struct {
 	Value byte
 }
 
-func (t *TokOther) token() {}
+func (t *TokEof) token()        {}
+func (t *TokDef) token()        {}
+func (t *TokExtern) token()     {}
+func (t *TokIdentifier) token() {}
+func (t *TokNumber) token()     {}
+func (t *TokOther) token()      {}

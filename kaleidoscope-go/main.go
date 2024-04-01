@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"kaleidoscope/lexer"
 	"os"
 )
 
@@ -16,5 +17,8 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
-	_, _ = os.Stdout.Write(contents)
+	tokens := lexer.Lex(contents)
+	for _, t := range tokens {
+		fmt.Printf("%v", t)
+	}
 }
