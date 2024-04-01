@@ -19,6 +19,7 @@ func main() {
 	}
 	tokens := lexer.Lex(contents)
 	for _, t := range tokens {
-		fmt.Printf("%v", t)
+		fmt.Printf("%s ", t.String())
 	}
+	fmt.Println()
 }
