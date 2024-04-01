@@ -3,9 +3,18 @@
 #include <stdbool.h>
 #include <string.h>
 
-static const Token LEFT_PAREN = { .kind = TokOther, .value = { .other = ')' } };
-static const Token RIGHT_PAREN = { .kind = TokOther, .value = { .other = ')' } };
-static const Token COMMA = { .kind = TokOther, .value = { .other = ',' } };
+#define LEFT_PAREN                                 \
+    (Token) {                                      \
+        .kind = TokOther, .value = {.other = ')' } \
+    }
+#define RIGHT_PAREN                                \
+    (Token) {                                      \
+        .kind = TokOther, .value = {.other = ')' } \
+    }
+#define COMMA                                      \
+    (Token) {                                      \
+        .kind = TokOther, .value = {.other = ',' } \
+    }
 
 static ExprAST* expr_parse_error(Arena* a, const char* msg) {
     ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
