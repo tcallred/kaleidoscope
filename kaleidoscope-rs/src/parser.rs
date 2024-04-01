@@ -1,5 +1,6 @@
 use crate::lexer::Token;
 use std::iter::{Iterator, Peekable};
+use std::slice::Iter;
 
 enum ExprAST {
     Number(f64),
@@ -27,61 +28,43 @@ struct FunctionAST {
 
 struct ParseError(String);
 
-fn expect<I>(tokens: &mut I, token: Token) -> Result<(), ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn expect(tokens: &mut Peekable<Iter<Token>>, token: Token) -> Result<(), ParseError> {
     match tokens.next() {
-        Some(t) if t == token => Ok(()),
+        Some(t) if *t == token => Ok(()),
         _ => Err(ParseError(format!("Expected {:?}", token))),
     }
 }
 
-fn expect_id<I>(tokens: &mut I) -> Result<String, ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn expect_id(tokens: &mut Peekable<Iter<Token>>) -> Result<String, ParseError> {
     match tokens.next() {
         Some(t) => match t {
-            Token::Identifier(s) => Ok(s),
+            Token::Identifier(s) => Ok(s.to_owned()),
             _ => Err(ParseError(format!("Exected identifier got {:?}", t))),
         },
         _ => Err(ParseError("Expected identifier".to_string())),
     }
 }
 
-fn parse_expression<I>(tokens: &mut I) -> Result<ExprAST, ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn parse_expression(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
     todo!()
 }
 
-fn parse_number<I>(tokens: &mut I) -> Result<ExprAST, ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn parse_number(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
     if let Some(Token::Number(n)) = tokens.next() {
-        Ok(ExprAST::Number(n))
+        Ok(ExprAST::Number(*n))
     } else {
         Err(ParseError("Expected number".to_string()))
     }
 }
 
-fn parse_paren_expr<I>(tokens: &mut I) -> Result<ExprAST, ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn parse_paren_expr(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
     expect(tokens, Token::Other('('))?;
     let expr = parse_expression(tokens)?;
     expect(tokens, Token::Other(')'))?;
     Ok(expr)
 }
 
-fn parse_identifier_expr<I>(tokens: &mut Peekable<I>) -> Result<ExprAST, ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn parse_identifier_expr(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
     let id = expect_id(tokens)?;
     if let Some(Token::Other('(')) = tokens.peek() {
         expect(tokens, Token::Other('('))?;
@@ -114,10 +97,7 @@ where
     }
 }
 
-fn parse_primary<I>(tokens: &mut Peekable<I>) -> Result<ExprAST, ParseError>
-where
-    I: Iterator<Item = Token>,
-{
+fn parse_primary(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
     if let Some(token) = tokens.peek() {
         match token {
             Token::Identifier(_) => parse_identifier_expr(tokens),
