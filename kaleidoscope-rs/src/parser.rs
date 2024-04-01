@@ -1,3 +1,4 @@
+use std::fmt::format;
 use crate::lexer::Token;
 use std::iter::{Iterator, Peekable};
 use std::slice::Iter;
@@ -28,89 +29,77 @@ struct FunctionAST {
 
 struct ParseError(String);
 
-fn expect(tokens: &mut Peekable<Iter<Token>>, token: Token) -> Result<(), ParseError> {
-    match tokens.next() {
-        Some(t) if *t == token => Ok(()),
-        _ => Err(ParseError(format!("Expected {:?}", token))),
+fn expect(tokens: &[Token], idx: &mut usize, token: Token) -> Result<(), ParseError> {
+    if tokens[*idx] != token {
+        return Err(ParseError(format!("Expected {:?}", token)));
     }
+    *idx += 1;
+    Ok(())
 }
 
-fn expect_id(tokens: &mut Peekable<Iter<Token>>) -> Result<String, ParseError> {
-    match tokens.next() {
-        Some(t) => match t {
-            Token::Identifier(s) => Ok(s.to_owned()),
-            _ => Err(ParseError(format!("Exected identifier got {:?}", t))),
-        },
-        _ => Err(ParseError("Expected identifier".to_string())),
-    }
+fn expect_id(tokens: &[Token], idx: &mut usize) -> Result<String, ParseError> {
+    let Token::Identifier(ref s) = tokens[*idx] else {
+        return Err(ParseError(format!("Expected identifier got {:?}", tokens[*idx])));
+    };
+    *idx += 1;
+    Ok(s.clone())
 }
 
-fn parse_expression(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
+fn parse_expression(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
     todo!()
 }
 
-fn parse_number(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
-    if let Some(Token::Number(n)) = tokens.next() {
-        Ok(ExprAST::Number(*n))
-    } else {
-        Err(ParseError("Expected number".to_string()))
-    }
+fn parse_number(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
+    let Token::Number(n) = tokens[*idx] else {
+        return Err(ParseError("Expected number".to_string()));
+    };
+
+    Ok(ExprAST::Number(n))
 }
 
-fn parse_paren_expr(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
-    expect(tokens, Token::Other('('))?;
-    let expr = parse_expression(tokens)?;
-    expect(tokens, Token::Other(')'))?;
+fn parse_paren_expr(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
+    expect(tokens, idx, Token::Other('('))?;
+    let expr = parse_expression(tokens, idx)?;
+    expect(tokens, idx, Token::Other(')'))?;
     Ok(expr)
 }
 
-fn parse_identifier_expr(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
-    let id = expect_id(tokens)?;
-    if let Some(Token::Other('(')) = tokens.peek() {
-        expect(tokens, Token::Other('('))?;
+fn parse_identifier_expr(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
+    let id = expect_id(tokens, idx)?;
+    if tokens[*idx] == Token::Other('(') {
+        expect(tokens, idx, Token::Other('('))?;
         let mut args: Vec<ExprAST> = Vec::new();
-        if let Some(Token::Other(')')) = tokens.peek() {
-            expect(tokens, Token::Other(')'))?;
-        } else {
-            loop {
-                let expr = parse_expression(tokens)?;
-                args.push(expr);
-                match tokens.peek() {
-                    Some(Token::Other(',')) => {
-                        expect(tokens, Token::Other(','))?;
-                    }
-                    Some(Token::Other(')')) => {
-                        expect(tokens, Token::Other(')'))?;
-                        break;
-                    }
-                    _ => {
-                        return Err(ParseError(
-                            "Unexpected token or end of token stream".to_string(),
-                        ));
-                    }
-                }
+        if tokens[*idx] == Token::Other(')') {
+            expect(tokens, idx, Token::Other(')'))?;
+            return Ok(ExprAST::Call { callee: id, args });
+        }
+        loop {
+            let expr = parse_expression(tokens, idx)?;
+            args.push(expr);
+            if tokens[*idx] == Token::Other(',') {
+                expect(tokens, idx, Token::Other(','))?;
+            }
+            if tokens[*idx] == Token::Other(')') {
+                expect(tokens, idx, Token::Other(')'))?;
+                break;
             }
         }
-        Ok(ExprAST::Call { callee: id, args })
+        return Ok(ExprAST::Call { callee: id, args });
     } else {
-        Ok(ExprAST::Variable(id))
+        return Ok(ExprAST::Variable(id));
     }
 }
 
-fn parse_primary(tokens: &mut Peekable<Iter<Token>>) -> Result<ExprAST, ParseError> {
-    if let Some(token) = tokens.peek() {
-        match token {
-            Token::Identifier(_) => parse_identifier_expr(tokens),
-            Token::Number(_) => parse_number(tokens),
-            Token::Other('(') => parse_paren_expr(tokens),
-            _ => Err(ParseError(format!("Unexpected token {:?}", token))),
-        }
-    } else {
-        Err(ParseError("Unexpected end of stream".to_string()))
+fn parse_primary(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
+    match tokens[*idx] {
+        Token::Identifier(_) => parse_identifier_expr(tokens, idx),
+        Token::Number(_) => parse_number(tokens, idx),
+        Token::Other('(') => parse_paren_expr(tokens, idx),
+        _ => Err(ParseError(format!("Unexpected token {:?}", tokens[*idx]))),
     }
 }
 
-fn get_tok_precedence(token: char) -> i32 {
+fn binop_precedence(token: char) -> i32 {
     match token {
         '<' => 10,
         '+' => 20,
@@ -119,3 +108,34 @@ fn get_tok_precedence(token: char) -> i32 {
         _ => -1,
     }
 }
+
+fn get_tok_precedence(token: Token) -> i32 {
+    match token {
+        Token::Other(c) => binop_precedence(c),
+        _ => -1,
+    }
+}
+
+fn parse_binop_rhs(tokens: &[Token], idx: &mut usize, expr_prec: i32, mut lhs: ExprAST) -> Result<ExprAST, ParseError> {
+    loop {
+        let tok_prec = get_tok_precedence(tokens[*idx].clone());
+        if tok_prec < expr_prec {
+            return Ok(lhs);
+        }
+        let Token::Other(binop) = tokens[*idx] else {
+            return Err(ParseError("Expected binop".to_string()));
+        };
+        *idx += 1;
+        let mut rhs = parse_primary(tokens, idx)?;
+        let next_prec = get_tok_precedence(tokens[*idx].clone());
+        if tok_prec < next_prec {
+            rhs = parse_binop_rhs(tokens, idx, tok_prec + 1, rhs)?; 
+        }
+        lhs = ExprAST::Binop {
+            op: binop,
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+        }
+    }
+}
+
