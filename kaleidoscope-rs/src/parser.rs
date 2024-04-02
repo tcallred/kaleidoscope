@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::lexer::Token;
 
 enum ExprAST {
@@ -104,9 +105,9 @@ fn binop_precedence(token: char) -> i32 {
     }
 }
 
-fn get_tok_precedence(token: Token) -> i32 {
+fn get_tok_precedence(token: &Token) -> i32 {
     match token {
-        Token::Other(c) => binop_precedence(c),
+        Token::Other(c) => binop_precedence(*c),
         _ => -1,
     }
 }
@@ -118,7 +119,7 @@ fn parse_binop_rhs(
     mut lhs: ExprAST,
 ) -> Result<ExprAST, ParseError> {
     loop {
-        let tok_prec = get_tok_precedence(tokens[*idx].clone());
+        let tok_prec = get_tok_precedence(&tokens[*idx]);
         if tok_prec < expr_prec {
             return Ok(lhs);
         }
@@ -127,7 +128,7 @@ fn parse_binop_rhs(
         };
         *idx += 1;
         let mut rhs = parse_primary(tokens, idx)?;
-        let next_prec = get_tok_precedence(tokens[*idx].clone());
+        let next_prec = get_tok_precedence(&tokens[*idx]);
         if tok_prec < next_prec {
             rhs = parse_binop_rhs(tokens, idx, tok_prec + 1, rhs)?;
         }
