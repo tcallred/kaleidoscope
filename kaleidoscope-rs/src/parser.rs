@@ -36,14 +36,13 @@ fn expect(tokens: &[Token], idx: &mut usize, token: Token) -> Result<(), ParseEr
 
 fn expect_id(tokens: &[Token], idx: &mut usize) -> Result<String, ParseError> {
     let Token::Identifier(ref s) = tokens[*idx] else {
-        return Err(ParseError(format!("Expected identifier got {:?}", tokens[*idx])));
+        return Err(ParseError(format!(
+            "Expected identifier got {:?}",
+            tokens[*idx]
+        )));
     };
     *idx += 1;
     Ok(s.clone())
-}
-
-fn parse_expression(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
-    todo!()
 }
 
 fn parse_number(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
@@ -112,7 +111,12 @@ fn get_tok_precedence(token: Token) -> i32 {
     }
 }
 
-fn parse_binop_rhs(tokens: &[Token], idx: &mut usize, expr_prec: i32, mut lhs: ExprAST) -> Result<ExprAST, ParseError> {
+fn parse_binop_rhs(
+    tokens: &[Token],
+    idx: &mut usize,
+    expr_prec: i32,
+    mut lhs: ExprAST,
+) -> Result<ExprAST, ParseError> {
     loop {
         let tok_prec = get_tok_precedence(tokens[*idx].clone());
         if tok_prec < expr_prec {
@@ -135,3 +139,7 @@ fn parse_binop_rhs(tokens: &[Token], idx: &mut usize, expr_prec: i32, mut lhs: E
     }
 }
 
+fn parse_expression(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
+    let lhs = parse_primary(tokens, idx)?;
+    return parse_binop_rhs(tokens, idx, 0, lhs);
+}
