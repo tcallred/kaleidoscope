@@ -1,7 +1,4 @@
-use std::fmt::format;
 use crate::lexer::Token;
-use std::iter::{Iterator, Peekable};
-use std::slice::Iter;
 
 enum ExprAST {
     Number(f64),
@@ -66,28 +63,27 @@ fn parse_paren_expr(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseE
 
 fn parse_identifier_expr(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
     let id = expect_id(tokens, idx)?;
-    if tokens[*idx] == Token::Other('(') {
-        expect(tokens, idx, Token::Other('('))?;
-        let mut args: Vec<ExprAST> = Vec::new();
-        if tokens[*idx] == Token::Other(')') {
-            expect(tokens, idx, Token::Other(')'))?;
-            return Ok(ExprAST::Call { callee: id, args });
-        }
-        loop {
-            let expr = parse_expression(tokens, idx)?;
-            args.push(expr);
-            if tokens[*idx] == Token::Other(',') {
-                expect(tokens, idx, Token::Other(','))?;
-            }
-            if tokens[*idx] == Token::Other(')') {
-                expect(tokens, idx, Token::Other(')'))?;
-                break;
-            }
-        }
-        return Ok(ExprAST::Call { callee: id, args });
-    } else {
+    if tokens[*idx] != Token::Other('(') {
         return Ok(ExprAST::Variable(id));
     }
+    expect(tokens, idx, Token::Other('('))?;
+    let mut args: Vec<ExprAST> = Vec::new();
+    if tokens[*idx] == Token::Other(')') {
+        expect(tokens, idx, Token::Other(')'))?;
+        return Ok(ExprAST::Call { callee: id, args });
+    }
+    loop {
+        let expr = parse_expression(tokens, idx)?;
+        args.push(expr);
+        if tokens[*idx] == Token::Other(',') {
+            expect(tokens, idx, Token::Other(','))?;
+        }
+        if tokens[*idx] == Token::Other(')') {
+            expect(tokens, idx, Token::Other(')'))?;
+            break;
+        }
+    }
+    return Ok(ExprAST::Call { callee: id, args });
 }
 
 fn parse_primary(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
@@ -129,7 +125,7 @@ fn parse_binop_rhs(tokens: &[Token], idx: &mut usize, expr_prec: i32, mut lhs: E
         let mut rhs = parse_primary(tokens, idx)?;
         let next_prec = get_tok_precedence(tokens[*idx].clone());
         if tok_prec < next_prec {
-            rhs = parse_binop_rhs(tokens, idx, tok_prec + 1, rhs)?; 
+            rhs = parse_binop_rhs(tokens, idx, tok_prec + 1, rhs)?;
         }
         lhs = ExprAST::Binop {
             op: binop,
