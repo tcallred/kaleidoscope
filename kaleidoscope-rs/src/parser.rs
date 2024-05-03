@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 use crate::lexer::Token;
 
 #[derive(Debug)]
@@ -16,18 +17,20 @@ enum ExprAST {
     },
 }
 
+#[derive(Debug)]
 struct PrototypeAST {
     name: String,
-    args: Vec<ExprAST>,
+    args: Vec<String>,
 }
 
-struct FunctionAST {
+#[derive(Debug)]
+pub struct FunctionAST {
     proto: PrototypeAST,
     body: ExprAST,
 }
 
 #[derive(Debug)]
-struct ParseError(String);
+pub struct ParseError(String);
 
 fn expect(tokens: &[Token], idx: &mut usize, token: Token) -> Result<(), ParseError> {
     if tokens[*idx] != token {
@@ -147,16 +150,73 @@ fn parse_expression(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseE
     return parse_binop_rhs(tokens, idx, 0, lhs);
 }
 
+fn parse_prototype(tokens: &[Token], idx: &mut usize) -> Result<PrototypeAST, ParseError> {
+    let fn_name = expect_id(tokens, idx)?;
+    expect(tokens, idx, Token::Other('('))?;
+    let mut arg_names = Vec::new();
+    loop {
+        if tokens[*idx] == Token::Other(')') {
+            expect(tokens, idx, Token::Other(')'))?;
+            break;
+        }
+        let arg_name = expect_id(tokens, idx)?;
+        arg_names.push(arg_name);
+    }
+    Ok(PrototypeAST { name: fn_name, args: arg_names })
+}
+
+fn parse_definition(tokens: &[Token], idx: &mut usize) -> Result<FunctionAST, ParseError> {
+    expect(tokens, idx, Token::Def)?;
+    let proto = parse_prototype(tokens, idx)?;
+    let e = parse_expression(tokens, idx)?;
+    Ok(FunctionAST { proto, body: e })
+}
+
+fn parse_extern(tokens: &[Token], idx: &mut usize) -> Result<PrototypeAST, ParseError> {
+    expect(tokens, idx, Token::Extern)?;
+    parse_prototype(tokens, idx)
+}
+
+fn parse_top_level_expr(tokens: &[Token], idx: &mut usize) -> Result<FunctionAST, ParseError> {
+    let e = parse_expression(tokens, idx)?;
+    let proto = PrototypeAST { name: "__anon_expr".to_string(), args: vec![] };
+    Ok(FunctionAST { proto, body: e })
+}
+
+pub fn parse(tokens: &[Token]) -> Result<Vec<FunctionAST>, ParseError> {
+    let mut idx = 0;
+    let mut fns = Vec::new();
+    loop {
+        match tokens[idx] {
+            Token::Eof => { return Ok(fns); }
+            Token::Other(';') => { idx += 1 }
+            Token::Def => {
+                let d = parse_definition(tokens, &mut idx)?;
+                fns.push(d);
+            }
+            Token::Extern => {
+                let ext = parse_extern(tokens, &mut idx)?;
+                fns.push(FunctionAST { proto: ext, body: ExprAST::Number(0.0) });
+            }
+            _ => {
+                let top_level = parse_top_level_expr(tokens, &mut idx)?;
+                fns.push(top_level);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::lexer::lex;
     use super::*;
+
     #[test]
     fn test_parse_exp() {
         let program: Vec<char> = "x+(1+2)*3-f(x)\n".chars().collect();
         let tokens = lex(&program);
         let mut idx = 0;
-        let expr_res = parse_expression(&tokens, &mut idx); 
+        let expr_res = parse_expression(&tokens, &mut idx);
         println!("{:?}", expr_res);
     }
 }
