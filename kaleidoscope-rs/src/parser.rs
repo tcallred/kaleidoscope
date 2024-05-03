@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use crate::lexer::Token;
 
+#[derive(Debug)]
 enum ExprAST {
     Number(f64),
     Variable(String),
@@ -25,6 +26,7 @@ struct FunctionAST {
     body: ExprAST,
 }
 
+#[derive(Debug)]
 struct ParseError(String);
 
 fn expect(tokens: &[Token], idx: &mut usize, token: Token) -> Result<(), ParseError> {
@@ -50,7 +52,7 @@ fn parse_number(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError
     let Token::Number(n) = tokens[*idx] else {
         return Err(ParseError("Expected number".to_string()));
     };
-
+    *idx += 1;
     Ok(ExprAST::Number(n))
 }
 
@@ -143,4 +145,18 @@ fn parse_binop_rhs(
 fn parse_expression(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
     let lhs = parse_primary(tokens, idx)?;
     return parse_binop_rhs(tokens, idx, 0, lhs);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::lexer::lex;
+    use super::*;
+    #[test]
+    fn test_parse_exp() {
+        let program: Vec<char> = "x+(1+2)*3-f(x)\n".chars().collect();
+        let tokens = lex(&program);
+        let mut idx = 0;
+        let expr_res = parse_expression(&tokens, &mut idx); 
+        println!("{:?}", expr_res);
+    }
 }
