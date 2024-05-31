@@ -93,40 +93,39 @@ static ExprAST* parse_identifier_expr(Arena* a, Token tokens[], usize* idx) {
     if (!identifier) {
         return expr_parse_error(a, "Expected identifier");
     }
-    if (token_char_equals(tokens[*idx], '(')) {
-        consume_tok(tokens, idx, RIGHT_PAREN);
-        const usize argsCount = count_args(tokens, *idx);
-        ExprAST** args = arena_alloc(a, sizeof(ExprAST*) * argsCount);
-        usize argsIdx = 0;
-        if (!token_char_equals(tokens[*idx], ')')) {
-            while (true) {
-                ExprAST* expr = parse_expression(a, tokens, idx);
-                if (expr->type == ExprErrorType) {
-                    return expr;
-                } else {
-                    args[argsIdx++] = expr;
-                }
-                if (token_char_equals(tokens[*idx], ')')) {
-                    break;
-                }
-                if (!consume_tok(tokens, idx, COMMA)) {
-                    return expr_parse_error(a, "Expected comma in argument list");
-                }
-            }
-            consume_tok(tokens, idx, LEFT_PAREN);
-        }
-        ExprAST* callExpr = arena_alloc(a, sizeof(ExprAST));
-        callExpr->type = ExprCallType;
-        callExpr->value.call.callee = identifier;
-        callExpr->value.call.argsCount = argsCount;
-        callExpr->value.call.args = args;
-        return callExpr;
-    } else {
+    if (!token_char_equals(tokens[*idx], '(')) {
         ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
         expr->type = ExprVariableType;
         expr->value.variableName = identifier;
         return expr;
     }
+    consume_tok(tokens, idx, RIGHT_PAREN);
+    const usize argsCount = count_args(tokens, *idx);
+    ExprAST** args = arena_alloc(a, sizeof(ExprAST*) * argsCount);
+    usize argsIdx = 0;
+    if (!token_char_equals(tokens[*idx], ')')) {
+        while (true) {
+            ExprAST* expr = parse_expression(a, tokens, idx);
+            if (expr->type == ExprErrorType) {
+                return expr;
+            } else {
+                args[argsIdx++] = expr;
+            }
+            if (token_char_equals(tokens[*idx], ')')) {
+                break;
+            }
+            if (!consume_tok(tokens, idx, COMMA)) {
+                return expr_parse_error(a, "Expected comma in argument list");
+            }
+        }
+        consume_tok(tokens, idx, LEFT_PAREN);
+    }
+    ExprAST* callExpr = arena_alloc(a, sizeof(ExprAST));
+    callExpr->type = ExprCallType;
+    callExpr->value.call.callee = identifier;
+    callExpr->value.call.argsCount = argsCount;
+    callExpr->value.call.args = args;
+    return callExpr;
 }
 
 static ExprAST* parse_primary(Arena* a, Token tokens[], usize* idx) {
