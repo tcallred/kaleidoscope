@@ -1,6 +1,8 @@
 #include "parser.h"
 #include "lexer.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define LEFT_PAREN                                 \
@@ -16,11 +18,9 @@
         .kind = TokOther, .value = {.other = ',' } \
     }
 
-static ExprAST* expr_parse_error(Arena* a, const char* msg) {
-    ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
-    expr->type = ExprErrorType;
-    expr->value.errorValue = msg;
-    return expr;
+static void parse_error(const char* msg) {
+    fprintf(stderr, "parse error: %s", msg);
+    exit(1);
 }
 
 static void progress(usize* idx) {
@@ -47,24 +47,23 @@ static const char* expect_id(Token tokens[], usize* idx) {
 static ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx);
 
 static ExprAST* parse_number(Arena* a, Token tokens[], usize* idx) {
-    if (tokens[*idx].kind == TokNumber) {
-        ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
-        expr->type = ExprNumberType;
-        expr->value.numberValue = tokens[*idx].value.number;
-        progress(idx);
-        return expr;
-    } else {
-        return expr_parse_error(a, "Expected number");
+    if (tokens[*idx].kind != TokNumber) {
+        parse_error("Expected number");
     }
+    ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
+    expr->type = ExprNumberType;
+    expr->value.numberValue = tokens[*idx].value.number;
+    progress(idx);
+    return expr;
 }
 
 static ExprAST* parse_paren_expr(Arena* a, Token tokens[], usize* idx) {
     if (!consume_tok(tokens, idx, LEFT_PAREN)) {
-        return expr_parse_error(a, "Expected left paren");
+        parse_error("Expected left paren");
     }
     ExprAST* expr = parse_expression(a, tokens, idx);
     if (!consume_tok(tokens, idx, RIGHT_PAREN)) {
-        return expr_parse_error(a, "Expected right paren");
+        parse_error("Expected right paren");
     }
     return expr;
 }
@@ -91,7 +90,7 @@ static usize count_args(Token tokens[], usize idx) {
 static ExprAST* parse_identifier_expr(Arena* a, Token tokens[], usize* idx) {
     const char* identifier = expect_id(tokens, idx);
     if (!identifier) {
-        return expr_parse_error(a, "Expected identifier");
+        parse_error("Expected identifier");
     }
     if (!token_char_equals(tokens[*idx], '(')) {
         ExprAST* expr = arena_alloc(a, sizeof(ExprAST));
@@ -106,16 +105,12 @@ static ExprAST* parse_identifier_expr(Arena* a, Token tokens[], usize* idx) {
     if (!token_char_equals(tokens[*idx], ')')) {
         while (true) {
             ExprAST* expr = parse_expression(a, tokens, idx);
-            if (expr->type == ExprErrorType) {
-                return expr;
-            } else {
-                args[argsIdx++] = expr;
-            }
+            args[argsIdx++] = expr;
             if (token_char_equals(tokens[*idx], ')')) {
                 break;
             }
             if (!consume_tok(tokens, idx, COMMA)) {
-                return expr_parse_error(a, "Expected comma in argument list");
+                parse_error("Expected comma in argument list");
             }
         }
         consume_tok(tokens, idx, LEFT_PAREN);
@@ -140,7 +135,8 @@ static ExprAST* parse_primary(Arena* a, Token tokens[], usize* idx) {
         }
         // fallthrough
     default:
-        return expr_parse_error(a, "Unknown token when expecting expression");
+        parse_error("Unknown token when expecting expression");
+        return NULL;
     }
 }
 
@@ -176,16 +172,10 @@ static ExprAST* parse_binop_rhs(Arena* a, Token tokens[], usize* idx, int exprPr
         char binop = tokens[*idx].value.other;
         progress(idx);
         ExprAST* rhs = parse_primary(a, tokens, idx);
-        if (rhs->type == ExprErrorType) {
-            return rhs;
-        }
         int nextPrec = get_tok_precedence(tokens[*idx]);
         if (tokPrec < nextPrec) {
             // Binop binds less tightly with rhs than operator after rhs
             rhs = parse_binop_rhs(a, tokens, idx, tokPrec + 1, rhs);
-            if (rhs->type == ExprErrorType) {
-                return rhs;
-            }
         }
         // Merge lhs/rhs
         ExprAST* prevLhs = lhs;
@@ -199,19 +189,10 @@ static ExprAST* parse_binop_rhs(Arena* a, Token tokens[], usize* idx, int exprPr
 
 static ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx) {
     ExprAST* lhs = parse_primary(a, tokens, idx);
-    if (lhs->type == ExprErrorType) {
-        return lhs;
-    }
     return parse_binop_rhs(a, tokens, idx, 0, lhs);
 }
 
 // ---- Prototypes ----
-
-static PrototypeAST* prototype_error(Arena* a, const char* msg) {
-    PrototypeAST* p = arena_alloc(a, sizeof(PrototypeAST));
-    p->errorValue = msg;
-    return p;
-}
 
 static usize count_arg_names(Token tokens[], usize idx) {
     usize count = 0;
@@ -224,10 +205,10 @@ static usize count_arg_names(Token tokens[], usize idx) {
 static PrototypeAST* parse_prototype(Arena* a, Token tokens[], usize* idx) {
     const char* fnName = expect_id(tokens, idx);
     if (!fnName) {
-        return prototype_error(a, "Expected function name");
+        parse_error( "Expected function name");
     }
     if (!consume_tok(tokens, idx, LEFT_PAREN)) {
-        return prototype_error(a, "Expected open paren");
+        parse_error( "Expected open paren");
     }
     const usize argNameCnt = count_arg_names(tokens, *idx);
     const char** argNames = arena_alloc(a, sizeof(char*) * argNameCnt);

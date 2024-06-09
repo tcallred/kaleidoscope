@@ -1,6 +1,6 @@
-#include "arena.h"
 #define ARENA_IMPLEMENTATION
-#include "lexer.h"
+#include "arena.h"
+#include "lexer.c"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,22 +41,20 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Arena codeArena = { 0 };
-    const char* code = read_contents_to_string(&codeArena, argv[1]);
+    Arena arena = { 0 };
+    const char* code = read_contents_to_string(&arena, argv[1]);
     if (!code) {
         fprintf(stderr, "There was a problem reading the file");
         return 1;
     }
 
-    Arena lexArena = { 0 };
-    Token* tokens = lex(&lexArena, code);
+    Token* tokens = lex(&arena, code);
 
     for (int i = 0; tokens[i].kind != TokEof; i++) {
-        printf("%s ", token_to_string(&lexArena, tokens[i]));
+        printf("%s ", token_to_string(&arena, tokens[i]));
     }
     printf("\n");
 
-    arena_free(&codeArena);
-    arena_free(&lexArena);
+    arena_free(&arena);
     return 0;
 }

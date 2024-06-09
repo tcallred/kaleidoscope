@@ -3,19 +3,11 @@ SRCDIR := src
 BUILDDIR := build
 TARGET := $(BUILDDIR)/kaleidoscopec
 
-SRCEXT := c
-SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
-OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-
 CFLAGS := -Wall -Wextra -g
 
-$(TARGET): $(OBJECTS)
+all:
 	@mkdir -p $(BUILDDIR)
-	$(CC) $^ -o $(TARGET)
-
-$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
-	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(SRCDIR)/main.c -o $(TARGET)
 
 clean:
 	@$(RM) -r $(BUILDDIR)

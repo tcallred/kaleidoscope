@@ -4,7 +4,6 @@
 #include "types.h"
 
 typedef enum {
-    ExprErrorType = 0,
     ExprNumberType,
     ExprVariableType,
     ExprBinopType,
@@ -34,7 +33,6 @@ typedef struct {
     const char* name;
     const char** args;
     usize argsCount;
-    const char* errorValue;
 } PrototypeAST;
 
 typedef struct {
