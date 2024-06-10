@@ -1,4 +1,4 @@
-enum Token {
+enum Token : Equatable {
   case eof
   case def
   case extern
