@@ -1,0 +1,52 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift",
+            "name": "Debug kaleidoscope-swift (kaleidoscope-swift)",
+            "program": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift/.build/debug/kaleidoscope-swift",
+            "preLaunchTask": "swift: Build Debug kaleidoscope-swift (kaleidoscope-swift)"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift",
+            "name": "Release kaleidoscope-swift (kaleidoscope-swift)",
+            "program": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift/.build/release/kaleidoscope-swift",
+            "preLaunchTask": "swift: Build Release kaleidoscope-swift (kaleidoscope-swift)"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift",
+            "name": "Debug kaleidoscope (kaleidoscope-swift)",
+            "program": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift/.build/debug/kaleidoscope",
+            "preLaunchTask": "swift: Build Debug kaleidoscope (kaleidoscope-swift)"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift",
+            "name": "Release kaleidoscope (kaleidoscope-swift)",
+            "program": "${workspaceFolder:kaleidoscope}/kaleidoscope-swift/.build/release/kaleidoscope",
+            "preLaunchTask": "swift: Build Release kaleidoscope (kaleidoscope-swift)"
+        }
+    ]
+}
