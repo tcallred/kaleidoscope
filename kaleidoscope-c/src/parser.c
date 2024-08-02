@@ -187,7 +187,7 @@ static ExprAST* parse_binop_rhs(Arena* a, Token tokens[], usize* idx, int exprPr
     }
 }
 
-static ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx) {
+ExprAST* parse_expression(Arena* a, Token tokens[], usize* idx) {
     ExprAST* lhs = parse_primary(a, tokens, idx);
     return parse_binop_rhs(a, tokens, idx, 0, lhs);
 }

@@ -1,6 +1,7 @@
 #define ARENA_IMPLEMENTATION
 #include "arena.h"
 #include "lexer.c"
+#include "parser.c"
 #include <stdio.h>
 #include <stdlib.h>
 
