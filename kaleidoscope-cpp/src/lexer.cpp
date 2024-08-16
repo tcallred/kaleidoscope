@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-std::vector<Token> lex(std::string input) {
+std::vector<Token> lex(const std::string& input) {
     usize idx = 0;
     std::vector<Token> tokens = {};
 
@@ -43,7 +43,28 @@ std::vector<Token> lex(std::string input) {
                 idx++;
             }
         } else {
-            tokens.emplace_back(Token::Tag::Other, idx);
+            switch (input[idx]) {
+            case '(':
+                tokens.emplace_back(Token::Tag::LParen, idx);
+                break;
+            case ')':
+                tokens.emplace_back(Token::Tag::RParen, idx);
+                break;
+            case ';':
+                tokens.emplace_back(Token::Tag::Semicolon, idx);
+                break;
+            case '+':
+                tokens.emplace_back(Token::Tag::Plus, idx);
+                break;
+            case '-':
+                tokens.emplace_back(Token::Tag::Minus, idx);
+                break;
+            case '*':
+                tokens.emplace_back(Token::Tag::Star, idx);
+                break;
+            default:
+                tokens.emplace_back(Token::Tag::Other, idx);
+            }
             idx++;
         }
     }

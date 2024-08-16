@@ -1,7 +1,7 @@
 #include "lexer.cpp"
-#include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <iostream> 
 #include <vector>
 
 int main(int argc, char** argv) {
@@ -17,9 +17,9 @@ int main(int argc, char** argv) {
     std::vector<Token> tokens = lex(buffer.str());
 
     for (Token tok : tokens) {
-        std::printf("%s,", tok.str().c_str());
+        std::cout << tok.str() << ",";
     }
-    printf("\n");
+    std::cout << "\n";
 
     return 0;
 }
