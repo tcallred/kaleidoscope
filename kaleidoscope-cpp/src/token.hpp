@@ -11,7 +11,7 @@ struct Token {
     usize start;
 
     std::string str() {
-        static const std::string tagStrs[] = {"eof", "def", "extern", "id", "num", "LParen", "Rparen", ";", "+", "-", "*", "other"};
+        static const std::string tagStrs[] = {"eof", "def", "extern", "id", "num", "lparen", "rparen", ";", "+", "-", "*", "other"};
         std::ostringstream out;
         out << "{" << tagStrs[usize(tag)] << "," << start << "}";
         return out.str();
