@@ -23,21 +23,17 @@ pub fn lex(input: &[char]) -> Vec<Token> {
             break;
         }
         if input[idx].is_alphabetic() {
-            let tokens: &mut Vec<Token> = &mut tokens;
-            let mut identifier_str = String::new();
+            let mut id_str = String::new();
             while input[idx].is_alphanumeric() {
-                identifier_str.push(input[idx]);
+                id_str.push(input[idx]);
                 idx += 1;
             }
-            if identifier_str == "def" {
-                tokens.push(Token::Def);
-            } else if identifier_str == "extern" {
-                tokens.push(Token::Extern);
-            } else {
-                tokens.push(Token::Identifier(identifier_str));
+            match id_str.as_str() {
+                "def" => tokens.push(Token::Def),
+                "extern" => tokens.push(Token::Extern),
+                _ => tokens.push(Token::Identifier(id_str)),
             }
         } else if input[idx].is_numeric() || input[idx] == '.' {
-            let tokens: &mut Vec<Token> = &mut tokens;
             let mut num_str = String::new();
             while input[idx].is_numeric() || input[idx] == '.' {
                 num_str.push(input[idx]);

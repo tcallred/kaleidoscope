@@ -11,7 +11,11 @@ fn main() {
     println!("Tokens: {:?}", tokens);
     let ast_res = parser::parse(&tokens);
     match ast_res {
-        Ok(ast) => { println!("Ast: {:?}", ast); }
-        Err(parse_err) => { eprint!("{:?}\n", parse_err); }
+        Ok(ast) => {
+            println!("Ast: {:?}", ast);
+        }
+        Err(parse_err) => {
+            eprintln!("{:?}", parse_err);
+        }
     }
 }

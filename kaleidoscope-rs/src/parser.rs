@@ -88,7 +88,7 @@ fn parse_identifier_expr(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, P
             break;
         }
     }
-    return Ok(ExprAST::Call { callee: id, args });
+    Ok(ExprAST::Call { callee: id, args })
 }
 
 fn parse_primary(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
@@ -147,7 +147,7 @@ fn parse_binop_rhs(
 
 fn parse_expression(tokens: &[Token], idx: &mut usize) -> Result<ExprAST, ParseError> {
     let lhs = parse_primary(tokens, idx)?;
-    return parse_binop_rhs(tokens, idx, 0, lhs);
+    parse_binop_rhs(tokens, idx, 0, lhs)
 }
 
 fn parse_prototype(tokens: &[Token], idx: &mut usize) -> Result<PrototypeAST, ParseError> {
